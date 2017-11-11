@@ -1,0 +1,107 @@
+module Tests
+
+open Xunit
+open FsCheck
+open FsCheck.Xunit
+
+let lower (s: string) = s.ToLower()
+
+let verse (nbBottles: int) = 
+    let bottlesOnTheWall x =
+        match nbBottles with
+        | _ when nbBottles = x -> "No more bottles"
+        | _ when nbBottles = x + 1 -> "1 bottle"
+        | nb when nbBottles % 6 = 0 -> sprintf "%i packs" (nb/6) 
+        | nb -> sprintf "%i bottles" (nb - x)
+    
+    let firstHemistish = sprintf "%s of beer on the wall, %s of beer." (bottlesOnTheWall 0) (bottlesOnTheWall 0 |> lower)
+
+    let secondHemistish =
+        match nbBottles with
+        | 0 -> "Go to the store and buy some more, 99 bottles of beer on the wall."
+        | _ -> sprintf "Take one down and pass it around, %s of beer on the wall."  (bottlesOnTheWall 1 |> lower)
+
+    sprintf "%s
+    %s" firstHemistish secondHemistish
+
+let genNbBottles min max f =
+    Gen.choose (min, max)
+    |> Gen.filter f
+    |> Arb.fromGen
+
+let none _ = true
+
+type IntFrom3To99 =
+    static member Int() = genNbBottles 3 99 none
+
+type IntFrom2To99 =
+    static member Int() = genNbBottles 2 99 none
+
+type IntFrom1To99 =
+    static member Int() = genNbBottles 1 99 none
+
+type Int0Or1 =
+    static member Int() = genNbBottles 0 1 none
+
+type Int1Or2 =
+    static member Int() = genNbBottles 1 2 none
+
+type IntFrom2To99NotMultipleOf6 =
+    static member Int() = genNbBottles 2 99 (fun x -> x % 6 <> 0)
+
+[<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
+let ``Verses always contain ' of beer on the wall' from 99 to 2`` nbBottles =
+    (verse nbBottles).Contains(" of beer on the wall, ")
+    
+[<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
+let ``Verses always contain ' of beer.\n' from 99 to 2`` nbBottles =
+    (verse nbBottles).Contains(" of beer.
+")
+
+[<Property( Arbitrary=[| typeof<IntFrom3To99> |] )>]
+let ``Verses always contain ' of beer on the wall.' from 99 to 3`` nbBottles =
+    (verse nbBottles).Contains(" of beer on the wall.")
+
+[<Property( Arbitrary=[| typeof<IntFrom1To99> |] )>]
+let ``Verses always contain 'Take one down and pass it around, ' from 99 to 3`` nbBottles =
+    (verse nbBottles).Contains("Take one down and pass it around, ")
+
+[<Property( Arbitrary=[| typeof<Int0Or1> |] )>]
+let ``Verses always contain ', no more bottles of beer' for 0 or 1`` nbBottles =
+    (verse nbBottles).Contains(", no more bottles of beer")
+
+[<Property( Arbitrary=[| typeof<Int1Or2> |] )>]
+let ``Verses always contain ', 1 bottle of beer' for 1 or 2`` nbBottles =
+    (verse nbBottles).Contains(", 1 bottle of beer")
+
+[<Property( Arbitrary=[| typeof<IntFrom2To99NotMultipleOf6> |] )>]
+let ``Verses always contain nbBottles twice and nbBottles-1 once from 99 to 2 when not multiple of 6`` nbBottles =
+    let verse = (verse nbBottles)
+    let nbBottlesLength = (string nbBottles).Length
+    verse.StartsWith(string nbBottles)
+    && verse.Remove(0, nbBottlesLength).Contains(string nbBottles)
+    && verse.Contains(string (nbBottles - 1))
+
+[<Property( Arbitrary=[| typeof<IntFrom2To99NotMultipleOf6> |] )>]
+let ``Verses always contain 'bottles' from 99 to 2 when not multiple of 6`` nbBottles =
+    (verse nbBottles).Contains("bottles")
+
+[<Property( Arbitrary=[| typeof<Int1Or2> |] )>]
+let ``Verses always singular when 1 bottle for 1 or 2`` nbBottles =
+    let verse = verse nbBottles
+    let charIndexFollowing1Bottle = verse.IndexOf("1 bottle") + 8
+    verse.[charIndexFollowing1Bottle] = ' '
+
+[<Fact>]
+let ``Last verse starts 'No more'`` () =
+    Assert.True((verse 0).StartsWith("No more"))
+
+[<Fact>]
+let ``Last verse ends with 'Go to the store and buy some more, 99 bottles of beer on the wall.'`` () =
+    Assert.True((verse 0).EndsWith("Go to the store and buy some more, 99 bottles of beer on the wall."))
+
+[<Property( Arbitrary=[| typeof<IntFrom1To99> |] )>]
+let ``Verses always contains pack when nbBottles is a multiple of 6`` nbPacks =
+    let verse = verse (6 * nbPacks)
+    verse.Contains(" pack")
+    && not <| verse.Contains(" bottle")
