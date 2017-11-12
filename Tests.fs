@@ -26,28 +26,22 @@ let verse (nbBottles: int) =
 
 let genNbBottles min max f =
     Gen.choose (min, max)
-    |> Gen.filter f
     |> Arb.fromGen
 
-let none _ = true
-
 type IntFrom3To99 =
-    static member Int() = genNbBottles 3 99 none
+    static member Int() = genNbBottles 3 99
 
 type IntFrom2To99 =
-    static member Int() = genNbBottles 2 99 none
+    static member Int() = genNbBottles 2 99
 
 type IntFrom1To99 =
-    static member Int() = genNbBottles 1 99 none
+    static member Int() = genNbBottles 1 99
 
 type Int0Or1 =
-    static member Int() = genNbBottles 0 1 none
+    static member Int() = genNbBottles 0 1
 
 type Int1Or2 =
-    static member Int() = genNbBottles 1 2 none
-
-type IntFrom2To99NotMultipleOf6 =
-    static member Int() = genNbBottles 2 99 (fun x -> x % 6 <> 0)
+    static member Int() = genNbBottles 1 2
 
 [<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
 let ``Verses always contain ' of beer on the wall' from 99 to 2`` nbBottles =
@@ -74,17 +68,19 @@ let ``Verses always contain ', no more bottles of beer' for 0 or 1`` nbBottles =
 let ``Verses always contain ', 1 bottle of beer' for 1 or 2`` nbBottles =
     (verse nbBottles).Contains(", 1 bottle of beer")
 
-[<Property( Arbitrary=[| typeof<IntFrom2To99NotMultipleOf6> |] )>]
+[<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
 let ``Verses always contain nbBottles twice and nbBottles-1 once from 99 to 2 when not multiple of 6`` nbBottles =
-    let verse = (verse nbBottles)
-    let nbBottlesLength = (string nbBottles).Length
-    verse.StartsWith(string nbBottles)
-    && verse.Remove(0, nbBottlesLength).Contains(string nbBottles)
-    && verse.Contains(string (nbBottles - 1))
+    nbBottles % 6 <> 0 ==>
+        let verse = (verse nbBottles)
+        let nbBottlesLength = (string nbBottles).Length
+        verse.StartsWith(string nbBottles)
+        && verse.Remove(0, nbBottlesLength).Contains(string nbBottles)
+        && verse.Contains(string (nbBottles - 1))
 
-[<Property( Arbitrary=[| typeof<IntFrom2To99NotMultipleOf6> |] )>]
+[<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
 let ``Verses always contain 'bottles' from 99 to 2 when not multiple of 6`` nbBottles =
-    (verse nbBottles).Contains("bottles")
+    nbBottles % 6 <> 0 ==>
+        (verse nbBottles).Contains("bottles")
 
 [<Property( Arbitrary=[| typeof<Int1Or2> |] )>]
 let ``Verses always singular when 1 bottle for 1 or 2`` nbBottles =
