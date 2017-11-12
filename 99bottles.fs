@@ -5,9 +5,10 @@ let lower (s: string) = s.ToLower()
 let verse (nbBottles: int) = 
     let bottlesOnTheWall x =
         match nbBottles with
-        | _ when nbBottles = x -> "No more bottles"
-        | _ when nbBottles = x + 1 -> "1 bottle"
-        | nb when nbBottles % 6 = 0 -> sprintf "%i packs" (nb/6) 
+        | nb when nb = x -> "No more bottles"
+        | nb when nb = x + 1 -> "1 bottle"
+        | nb when nb = x + 6 -> "1 pack"
+        | nb when (nb - x) % 6 = 0 -> sprintf "%i packs" (nb/6) 
         | nb -> sprintf "%i bottles" (nb - x)
     
     let firstHemistish = sprintf "%s of beer on the wall, %s of beer." (bottlesOnTheWall 0) (bottlesOnTheWall 0 |> lower)

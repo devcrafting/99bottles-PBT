@@ -51,13 +51,18 @@ let ``Verses always contain ', 1 bottle of beer' for 1 or 2`` nbBottles =
     (verse nbBottles).Contains(", 1 bottle of beer")
 
 [<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
-let ``Verses always contain nbBottles twice and nbBottles-1 once from 99 to 2 when not multiple of 6`` nbBottles =
+let ``Verses always contain nbBottles twice once from 99 to 2 when not multiple of 6`` nbBottles =
     nbBottles % 6 <> 0 ==>
         let verse = (verse nbBottles)
         let nbBottlesLength = (string nbBottles).Length
         verse.StartsWith(string nbBottles)
         && verse.Remove(0, nbBottlesLength).Contains(string nbBottles)
-        && verse.Contains(string (nbBottles - 1))
+
+[<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
+let ``Verses always contain nbBottles-1 once from 99 to 2 when not multiple of 6 + 1`` nbBottles =
+    nbBottles % 6 <> 1 ==>
+        let verse = (verse nbBottles)
+        verse.Contains(string (nbBottles - 1))
 
 [<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
 let ``Verses always contain 'bottles' from 99 to 2 when not multiple of 6`` nbBottles =
@@ -78,8 +83,17 @@ let ``Last verse starts 'No more'`` () =
 let ``Last verse ends with 'Go to the store and buy some more, 99 bottles of beer on the wall.'`` () =
     Assert.True((verse 0).EndsWith("Go to the store and buy some more, 99 bottles of beer on the wall."))
 
-[<Property( Arbitrary=[| typeof<IntFrom1To99> |] )>]
-let ``Verses always contains pack when nbBottles is a multiple of 6`` nbPacks =
+[<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
+let ``Verses always contains 'packs' when nbBottles is a multiple of 6`` nbPacks =
     let verse = verse (6 * nbPacks)
-    verse.Contains(" pack")
-    && not <| verse.Contains(" bottle")
+    verse.Contains(" packs")
+
+[<Property( Arbitrary=[| typeof<Int0Or1> |] )>]
+let ``Verses always contains 'pack' when nbBottles is 6 or 7`` nbBottles =
+    let verse = verse (6 + nbBottles)
+    verse.Contains(" pack ")
+
+[<Property( Arbitrary=[| typeof<IntFrom1To99> |] )>]
+let ``Verses always contains 'bottle' for left bottles when nbBottles is a multiple of 6`` nbPacks =
+    let verse = verse (6 * nbPacks)
+    verse.Split('\n').[1].Contains(" bottle")
