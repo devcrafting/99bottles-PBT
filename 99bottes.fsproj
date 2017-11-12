@@ -3,6 +3,7 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="99bottles.fs" />
     <Compile Include="Tests.fs" />
   </ItemGroup>
   <ItemGroup>

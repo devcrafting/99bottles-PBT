@@ -4,27 +4,7 @@ open Xunit
 open FsCheck
 open FsCheck.Xunit
 
-let lower (s: string) = s.ToLower()
-
-let verse (nbBottles: int) = 
-    let bottlesOnTheWall x =
-        match nbBottles with
-        | _ when nbBottles = x -> "No more bottles"
-        | _ when nbBottles = x + 1 -> "1 bottle"
-        | nb when nbBottles % 6 = 0 -> sprintf "%i packs" (nb/6) 
-        | nb -> sprintf "%i bottles" (nb - x)
-    
-    let firstHemistish = sprintf "%s of beer on the wall, %s of beer." (bottlesOnTheWall 0) (bottlesOnTheWall 0 |> lower)
-
-    let secondHemistish =
-        match nbBottles with
-        | 0 -> "Go to the store and buy some more, 99 bottles of beer on the wall."
-        | _ -> sprintf "Take one down and pass it around, %s of beer on the wall."  (bottlesOnTheWall 1 |> lower)
-
-    sprintf "%s
-    %s" firstHemistish secondHemistish
-
-let genNbBottles min max f =
+let genNbBottles min max =
     Gen.choose (min, max)
     |> Arb.fromGen
 
@@ -42,6 +22,8 @@ type Int0Or1 =
 
 type Int1Or2 =
     static member Int() = genNbBottles 1 2
+
+open NinetyNineBottles
 
 [<Property( Arbitrary=[| typeof<IntFrom2To99> |] )>]
 let ``Verses always contain ' of beer on the wall' from 99 to 2`` nbBottles =
